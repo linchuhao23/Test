@@ -8,12 +8,13 @@ import com.lin.dubbo.api.DubboService;
 @Component("DubboServiceRef")
 public class DubboServiceRef implements DubboService {
 	
-	@Reference(group="DubboService", version="1.0")
-	private DubboService dubboService;
+	//@Reference(group="DubboService", version="1.0")
+	//private DubboService dubboService;
 
 	@Override
 	public String getDubboServiceName() {
-		return dubboService.getDubboServiceName();
+		//return dubboService.getDubboServiceName();
+		return null;
 	}
 
 }
