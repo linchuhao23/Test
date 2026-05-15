@@ -38,20 +38,36 @@ def fetch_ai_news() -> list[dict[str, str]]:
 
 
 def summarize_with_copilot(news_items: list[dict[str, str]]) -> str:
+    lang = get_env("NEWS_LANG", "zh-CN")
+    is_zh = lang.lower().startswith("zh")
+
     if not news_items:
-        return "最近24小时未检索到符合条件的 AI 新闻。"
+        return (
+            "最近24小时未检索到符合条件的 AI 新闻。"
+            if is_zh
+            else "No AI news was found in the last 24 hours."
+        )
 
     lines = [
         f"{i + 1}. {item['title']} ({item['pubDate']})\n{item['link']}"
         for i, item in enumerate(news_items)
     ]
-    prompt = (
-        "请根据以下最近24小时AI新闻，输出中文邮件正文：\n"
-        "1) 先给3-5条总体趋势总结\n"
-        "2) 再给不超过10条重点新闻，每条包含一句解读\n"
-        "3) 最后给一句对从业者的建议\n\n"
-        + "\n\n".join(lines)
-    )
+    if is_zh:
+        prompt = (
+            "请根据以下最近24小时AI新闻，输出中文邮件正文：\n"
+            "1) 先给3-5条总体趋势总结\n"
+            "2) 再给不超过10条重点新闻，每条包含一句解读\n"
+            "3) 最后给一句对从业者的建议\n\n"
+            + "\n\n".join(lines)
+        )
+    else:
+        prompt = (
+            "Please summarize the following AI news from the last 24 hours as an email body in English:\n"
+            "1) Start with 3-5 trend takeaways\n"
+            "2) Then list up to 10 key stories with one-line insight each\n"
+            "3) End with one practical recommendation for practitioners\n\n"
+            + "\n\n".join(lines)
+        )
 
     model = get_env("COPILOT_MODEL", "gpt-5-mini")
     cmd = ["gh", "copilot", "-p", prompt, "--silent", "--model", model]
@@ -61,8 +77,13 @@ def summarize_with_copilot(news_items: list[dict[str, str]]) -> str:
         return summary
 
     fallback = "\n".join([f"- {item['title']} ({item['link']})" for item in news_items[:10]])
+    if is_zh:
+        return (
+            "Copilot 摘要生成失败，以下为新闻列表（请检查 COPILOT_GH_TOKEN 或模型权限）：\n\n"
+            + fallback
+        )
     return (
-        "Copilot 摘要生成失败，以下为新闻列表（请检查 COPILOT_GH_TOKEN 或模型权限）：\n\n"
+        "Copilot summary generation failed. News list below (check COPILOT_GH_TOKEN and model access):\n\n"
         + fallback
     )
 
@@ -71,10 +92,10 @@ def send_mail(content: str) -> None:
     email_from = get_env("EMAIL_FROM")
     email_to = get_env("EMAIL_TO")
     smtp_host = get_env("SMTP_HOST")
-    smtp_port = int(get_env("SMTP_PORT", "465"))
+    use_tls = get_env("SMTP_USE_TLS", "true").lower() != "false"
+    smtp_port = int(get_env("SMTP_PORT", "587" if use_tls else "465"))
     smtp_user = get_env("SMTP_USERNAME")
     smtp_password = get_env("SMTP_PASSWORD")
-    use_tls = get_env("SMTP_USE_TLS", "true").lower() != "false"
 
     missing = [
         name
@@ -97,12 +118,12 @@ def send_mail(content: str) -> None:
     msg["To"] = email_to
 
     if use_tls:
-        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30) as server:
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
+            server.starttls()
             server.login(smtp_user, smtp_password)
             server.sendmail(email_from, [addr.strip() for addr in email_to.split(",")], msg.as_string())
     else:
-        with smtplib.SMTP(smtp_host, smtp_port, timeout=30) as server:
-            server.starttls()
+        with smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=30) as server:
             server.login(smtp_user, smtp_password)
             server.sendmail(email_from, [addr.strip() for addr in email_to.split(",")], msg.as_string())
 

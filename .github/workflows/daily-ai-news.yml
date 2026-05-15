@@ -33,5 +33,6 @@ jobs:
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          # true => SMTP + STARTTLS (default 587), false => SMTPS/SSL (default 465)
           SMTP_USE_TLS: ${{ vars.SMTP_USE_TLS }}
         run: python .github/scripts/daily_ai_news.py
