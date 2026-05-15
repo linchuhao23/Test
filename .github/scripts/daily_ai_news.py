@@ -96,6 +96,8 @@ def send_mail(content: str) -> None:
     smtp_port = int(get_env("SMTP_PORT", "587" if use_tls else "465"))
     smtp_user = get_env("SMTP_USERNAME")
     smtp_password = get_env("SMTP_PASSWORD")
+    lang = get_env("NEWS_LANG", "zh-CN")
+    is_zh = lang.lower().startswith("zh")
 
     missing = [
         name
@@ -111,7 +113,8 @@ def send_mail(content: str) -> None:
     if missing:
         raise ValueError(f"Missing required env vars: {', '.join(missing)}")
 
-    subject = f"AI 新闻日报 - {datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
+    date_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    subject = f"AI 新闻日报 - {date_str}" if is_zh else f"Daily AI News - {date_str}"
     msg = MIMEText(content, "plain", "utf-8")
     msg["Subject"] = subject
     msg["From"] = email_from
