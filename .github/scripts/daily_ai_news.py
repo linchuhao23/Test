@@ -70,8 +70,11 @@ def summarize_with_copilot(news_items: list[dict[str, str]]) -> str:
         )
 
     model = get_env("COPILOT_MODEL", "gpt-5-mini")
-    cmd = ["gh", "copilot", "-p", prompt, "--silent", "--model", model]
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    cmd = ["gh", "copilot", "--", "-p", prompt, "--silent", "--model", model]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+    except subprocess.TimeoutExpired:
+        result = subprocess.CompletedProcess(cmd, returncode=124, stdout="", stderr="Copilot request timed out")
     summary = result.stdout.strip()
     if result.returncode == 0 and summary:
         return summary
