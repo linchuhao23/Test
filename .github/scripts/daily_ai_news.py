@@ -92,13 +92,13 @@ def summarize_with_copilot(news_items: list[dict[str, str]]) -> str:
 
 
 def send_mail(content: str) -> None:
-    email_from = get_env("EMAIL_FROM")
-    email_to = get_env("EMAIL_TO")
-    smtp_host = get_env("SMTP_HOST")
+    email_from = get_env("MAIL_FROM")
+    email_to = get_env("MAIL_TO")
+    smtp_host = get_env("MAIL_HOST")
     use_tls = get_env("SMTP_USE_TLS", "true").lower() != "false"
     smtp_port = int(get_env("SMTP_PORT", "587" if use_tls else "465"))
-    smtp_user = get_env("SMTP_USERNAME")
-    smtp_password = get_env("SMTP_PASSWORD")
+    smtp_user = get_env("MAIL_USER")
+    smtp_password = get_env("MAIL_PASS")
     lang = get_env("NEWS_LANG", "zh-CN")
     is_zh = lang.lower().startswith("zh")
 
