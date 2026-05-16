@@ -1,0 +1,38 @@
+name: Daily AI News Mail
+
+on:
+  schedule:
+    # 01:00 UTC = 09:00 Asia/Shanghai
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send-ai-news:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Generate and send AI news email
+        env:
+          # Use a token from a Copilot-enabled account.
+          GH_TOKEN: ${{ secrets.COPILOT_GH_TOKEN }}
+          NEWS_LANG: ${{ vars.NEWS_LANG }}
+          COPILOT_MODEL: ${{ vars.COPILOT_MODEL }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          # true => SMTP + STARTTLS (default 587), false => SMTPS/SSL (default 465)
+          SMTP_USE_TLS: ${{ vars.SMTP_USE_TLS }}
+        run: python .github/scripts/daily_ai_news.py
